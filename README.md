@@ -40,11 +40,6 @@ if video_file:
 
 The `video_editor()` function accepts video file paths and configuration options for editing capabilities. The component supports basic trimming, filters, and export functionality.
 
-
-## Preview
-You can check the [component demo video](https://github.com/antunsz/streamlit-video-editor#readme) or visit the [GitHub repository](https://github.com/antunsz/streamlit-video-editor) for screenshots.
-
-
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request on [GitHub](https://github.com/antunsz/streamlit-video-editor).
