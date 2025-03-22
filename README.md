@@ -36,9 +36,6 @@ if video_file:
 
 ![Component Example](https://github.com/antunsz/streamlit-video-editor/raw/main/component-example.png)
 
-## Parameters
-
-The `video_editor()` function accepts video file paths and configuration options for editing capabilities. The component supports basic trimming, filters, and export functionality.
 
 ## Contributing
 
