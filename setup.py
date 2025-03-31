@@ -1,4 +1,3 @@
-  
 from os.path import dirname
 from os.path import join
 import setuptools
@@ -16,7 +15,11 @@ def readme() -> str:
 
 setuptools.setup(
     name="streamlit-video-editor",
-    version="0.0.1",
+    use_scm_version={
+        "write_to": "streamlit_video_editor/_version.py",
+        "write_to_template": '__version__ = "{version}"',
+    },
+    setup_requires=['setuptools_scm'],
     author="Carlos André Antunes",
     author_email="",
     description="A Streamlit custom component to display a simple video editor.",
