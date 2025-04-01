@@ -174,8 +174,9 @@ def video_editor_timeline(
     logger.info(f"Waveform data length: {len(waveform_data) if waveform_data is not None else 0}")
     logger.info(f"Frame data length: {len(frame_data) if frame_data else 0}")
    
-    # Use provided waveform data or initialize empty if not provided
-    waveform_data = waveform_data if waveform_data is not None else [0] * 128
+    # Use provided waveform data or initialize empty 
+    # The size is no longer fixed as the component will dynamically adjust based on video duration
+    waveform_data = waveform_data if waveform_data is not None else []
     
     # Ensure frame_data is a list of strings, not objects that will be serialized incorrectly
     safe_frame_data = []

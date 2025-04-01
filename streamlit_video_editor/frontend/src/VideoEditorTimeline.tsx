@@ -41,6 +41,8 @@ const VideoEditorTimeline: React.FC<VideoEditorTimelineProps> = ({ args, theme }
   const [audioData, setAudioData] = useState<number[]>([]);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
+  const [dynamicThumbnailCount, setDynamicThumbnailCount] = useState(100);
+  const [dynamicWaveformCount, setDynamicWaveformCount] = useState(100);
 
   useEffect(() => {
     // Inform Streamlit that the component is ready
@@ -51,6 +53,16 @@ const VideoEditorTimeline: React.FC<VideoEditorTimelineProps> = ({ args, theme }
     if (video) {
       video.addEventListener('loadedmetadata', () => {
         setVideoDuration(video.duration);
+        
+        // Calculate dynamic counts based on video duration
+        // 1 thumbnail every 3 seconds with a minimum of 50 and max of 300
+        const thumbnailCount = Math.min(300, Math.max(50, Math.ceil(video.duration / 3)));
+        setDynamicThumbnailCount(thumbnailCount);
+        
+        // 2 waveform points per second with a minimum of 100 and max of 1000
+        const waveformCount = Math.min(1000, Math.max(100, Math.ceil(video.duration * 2)));
+        setDynamicWaveformCount(waveformCount);
+        
         setupAudioAnalysis(video);
       });
 
@@ -197,14 +209,14 @@ const VideoEditorTimeline: React.FC<VideoEditorTimelineProps> = ({ args, theme }
                     />
                   ))
                 ) : (
-                  // Generate empty thumbnails if no frame data
-                  Array.from({ length: 10 }).map((_, index) => (
+                  // Generate empty thumbnails if no frame data - now using dynamic count
+                  Array.from({ length: dynamicThumbnailCount }).map((_, index) => (
                     <div
                       key={index}
                       className="frame-thumbnail"
                       style={{
                         backgroundImage: `url("data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==")`,
-                        width: '10%'
+                        width: `${100 / dynamicThumbnailCount}%`
                       }}
                     />
                   ))
@@ -229,8 +241,8 @@ const VideoEditorTimeline: React.FC<VideoEditorTimelineProps> = ({ args, theme }
                     );
                   })
                 ) : (
-                  // Generate default bars if no waveform data
-                  Array.from({ length: 100 }).map((_, index) => {
+                  // Generate default bars if no waveform data - now using dynamic count
+                  Array.from({ length: dynamicWaveformCount }).map((_, index) => {
                     // Create a varied pattern based on index
                     const height = 20 + 15 * Math.sin(index * Math.PI / 10);
                     return (
@@ -240,7 +252,7 @@ const VideoEditorTimeline: React.FC<VideoEditorTimelineProps> = ({ args, theme }
                         style={{
                           height: `${height}%`,
                           backgroundColor: effectiveTheme.primaryColor || 'rgba(255, 75, 75, 0.8)',
-                          flexBasis: `${100 / 100}%`,
+                          flexBasis: `${100 / dynamicWaveformCount}%`,
                           minWidth: 0
                         }}
                       />
