@@ -52,18 +52,28 @@ const VideoEditorTimeline: React.FC<VideoEditorTimelineProps> = ({ args, theme }
     const video = videoRef.current;
     if (video) {
       video.addEventListener('loadedmetadata', () => {
+        console.log(`Video loaded with duration: ${video.duration} seconds`);
         setVideoDuration(video.duration);
         
         // Calculate dynamic counts based on video duration
         // 1 thumbnail every 3 seconds with a minimum of 50 and max of 300
         const thumbnailCount = Math.min(300, Math.max(50, Math.ceil(video.duration / 3)));
+        console.log(`Setting thumbnail count to: ${thumbnailCount} based on duration: ${video.duration}`);
         setDynamicThumbnailCount(thumbnailCount);
         
         // 2 waveform points per second with a minimum of 100 and max of 1000
         const waveformCount = Math.min(1000, Math.max(100, Math.ceil(video.duration * 2)));
+        console.log(`Setting waveform count to: ${waveformCount} based on duration: ${video.duration}`);
         setDynamicWaveformCount(waveformCount);
         
         setupAudioAnalysis(video);
+      });
+
+      // Add an explicit error handler for video loading
+      video.addEventListener('error', (e) => {
+        console.error('Video loading error:', e);
+        console.error('Video error code:', video.error?.code);
+        console.error('Video error message:', video.error?.message);
       });
 
       return () => {
@@ -93,8 +103,12 @@ const VideoEditorTimeline: React.FC<VideoEditorTimelineProps> = ({ args, theme }
 
   const handleToggleCrop = () => {
     if (!cropMode) {
-      setCropStartTime(videoDuration * 0.1);
-      setCropEndTime(videoDuration * 0.9);
+      console.log(`Setting crop markers for toggle: video duration = ${videoDuration}`);
+      const startTime = 1.0;
+      const endTime = Math.max(videoDuration - 1.0, videoDuration * 0.75);
+      console.log(`Setting crop markers at: start=${startTime}, end=${endTime}`);
+      setCropStartTime(startTime);
+      setCropEndTime(endTime);
     }
     setCropMode(!cropMode);
   };
@@ -183,7 +197,14 @@ const VideoEditorTimeline: React.FC<VideoEditorTimelineProps> = ({ args, theme }
           ref={videoRef}
           controls
           style={{ width: '100%', maxWidth: '100%' }}
+          onLoadedData={() => console.log("Video data loaded successfully")}
           onError={(e) => console.error('Video loading error:', e)}
+          onTimeUpdate={() => {
+            // Log when video time updates to check if it's limited
+            if (videoRef.current) {
+              console.log(`Current time: ${videoRef.current.currentTime}, Duration: ${videoRef.current.duration}`);
+            }
+          }}
         >
           <source src={args.video_url} type="video/mp4" />
           Your browser does not support the video tag.
