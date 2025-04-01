@@ -31,7 +31,7 @@ else:
             logger.info(f"Using development build directory: {build_dir}")
         else:
             # Fallback to site-packages location for Docker environment
-            build_dir = "/usr/local/lib/python3.11/site-packages/streamlit_video_editor/frontend/build"
+            build_dir = "/usr/local/lib/python3.11/dist-packages/streamlit_video_editor/frontend/build"
             logger.info(f"Using fallback build directory: {build_dir}")
             if not os.path.exists(build_dir):
                 logger.error(f"Build directory not found at: {build_dir}")
