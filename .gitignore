@@ -127,3 +127,4 @@ dmypy.json
 # Pyre type checker
 .pyre/
 streamlit_video_editor/_version.py
+.DS_Store
