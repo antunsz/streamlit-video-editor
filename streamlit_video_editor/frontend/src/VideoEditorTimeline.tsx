@@ -43,6 +43,9 @@ const VideoEditorTimeline: React.FC<VideoEditorTimelineProps> = ({ args, theme }
   const analyserRef = useRef<AnalyserNode | null>(null);
   const [dynamicThumbnailCount, setDynamicThumbnailCount] = useState(100);
   const [dynamicWaveformCount, setDynamicWaveformCount] = useState(100);
+  const dragOffsetRef = useRef(0);
+  const initialMouseXRef = useRef<number>(0);
+  const initialCropTimeRef = useRef<number>(0);
 
   useEffect(() => {
     // Inform Streamlit that the component is ready
@@ -88,7 +91,8 @@ const VideoEditorTimeline: React.FC<VideoEditorTimelineProps> = ({ args, theme }
   const formatTime = (seconds: number): string => {
     const min = Math.floor(seconds / 60);
     const sec = Math.floor(seconds % 60);
-    return `${min}:${sec < 10 ? '0' + sec : sec}`;
+    const tenth = Math.floor((seconds % 1) * 10);
+    return `${min}:${sec < 10 ? '0' + sec : sec}.${tenth}`;
   };
 
   const handleCropApply = () => {
@@ -103,9 +107,15 @@ const VideoEditorTimeline: React.FC<VideoEditorTimelineProps> = ({ args, theme }
 
   const handleToggleCrop = () => {
     if (!cropMode) {
+      // Pause video playback when entering crop mode
+      if (videoRef.current) {
+        videoRef.current.pause();
+      }
+
       console.log(`Setting crop markers for toggle: video duration = ${videoDuration}`);
-      const startTime = 1.0;
-      const endTime = Math.max(videoDuration - 1.0, videoDuration * 0.75);
+      // Snap initial positions to the same grid (0.05s intervals)
+      const startTime = Math.round(1.0 * 20) / 20;
+      const endTime = Math.round((Math.max(videoDuration - 1.0, videoDuration * 0.75)) * 20) / 20;
       console.log(`Setting crop markers at: start=${startTime}, end=${endTime}`);
       setCropStartTime(startTime);
       setCropEndTime(endTime);
@@ -113,37 +123,46 @@ const VideoEditorTimeline: React.FC<VideoEditorTimelineProps> = ({ args, theme }
     setCropMode(!cropMode);
   };
 
-  const handleMarkerMouseDown = (markerType: 'start' | 'end') => (e: React.MouseEvent) => {
+  const handleMarkerMouseDown = (markerType: 'start' | 'end') => (e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    if (!timelineRef.current) return;
+
+    // Start relative drag
     isDraggingRef.current = true;
     activeMarkerRef.current = markerType;
+    initialMouseXRef.current = e.clientX;
+    initialCropTimeRef.current = markerType === 'start' ? cropStartTime : cropEndTime;
+
+    console.log('Drag start', { markerType, initialMouseX: e.clientX, initialTime: initialCropTimeRef.current });
+
     document.addEventListener('mousemove', handleMarkerDrag);
     document.addEventListener('mouseup', handleMarkerMouseUp);
   };
 
   const handleMarkerDrag = (e: MouseEvent) => {
-    if (!isDraggingRef.current || !timelineRef.current || !activeMarkerRef.current) return;
+    if (!isDraggingRef.current || !timelineRef.current || !activeMarkerRef.current || videoDuration <= 0) return;
 
-    const timeline = timelineRef.current.getBoundingClientRect();
-    const timelineWidth = timeline.width;
-    const timelineLeft = timeline.left;
+    const timelineRect = timelineRef.current.getBoundingClientRect();
+    const timelineWidth = timelineRect.width;
 
-    let position = (e.clientX - timelineLeft) / timelineWidth;
-    position = Math.max(0, Math.min(1, position));
-    const newTime = position * videoDuration;
+    // Compute time delta based on horizontal movement
+    const deltaX = e.clientX - initialMouseXRef.current;
+    const deltaTime = (deltaX / timelineWidth) * videoDuration;
+    let newTime = initialCropTimeRef.current + deltaTime;
+
+    // Clamp and snap
+    newTime = Math.max(0, Math.min(videoDuration, newTime));
+    newTime = Math.round(newTime * 20) / 20;
+
+    console.log('Dragging', { deltaX, deltaTime, newTime });
 
     if (activeMarkerRef.current === 'start') {
       if (newTime < cropEndTime) {
         setCropStartTime(newTime);
-        if (videoRef.current) {
-          videoRef.current.currentTime = newTime;
-        }
       }
     } else {
       if (newTime > cropStartTime) {
         setCropEndTime(newTime);
-        if (videoRef.current) {
-          videoRef.current.currentTime = newTime;
-        }
       }
     }
   };
@@ -210,12 +229,12 @@ const VideoEditorTimeline: React.FC<VideoEditorTimelineProps> = ({ args, theme }
           Your browser does not support the video tag.
         </video>
 
-        <div className="timeline-wrapper" ref={timelineRef}>
+        <div className="timeline-wrapper">
           <div className="timeline-labels">
             <div className="timeline-label" style={{ paddingBottom: '10px', paddingTop: '10px' }}>VIDEO</div>
             <div className="timeline-label">AUDIO</div>
           </div>
-          <div className="timeline-container">
+          <div className="timeline-container" ref={timelineRef}>
             <div className="video-track">
               <div className="frame-thumbnails">
                 {args.frame_data && args.frame_data.length > 0 ? (
@@ -287,7 +306,7 @@ const VideoEditorTimeline: React.FC<VideoEditorTimelineProps> = ({ args, theme }
                 <div
                   className="crop-marker"
                   style={{
-                    left: `${(cropStartTime / videoDuration) * 100}%`,
+                    left: `calc(${(cropStartTime / videoDuration) * 100}% - 1px)`,
                     cursor: 'ew-resize'
                   }}
                   onMouseDown={handleMarkerMouseDown('start')}
@@ -298,7 +317,7 @@ const VideoEditorTimeline: React.FC<VideoEditorTimelineProps> = ({ args, theme }
                 <div
                   className="crop-marker"
                   style={{
-                    left: `${(cropEndTime / videoDuration) * 100}%`,
+                    left: `calc(${(cropEndTime / videoDuration) * 100}% - 1px)`,
                     cursor: 'ew-resize'
                   }}
                   onMouseDown={handleMarkerMouseDown('end')}
