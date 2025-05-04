@@ -46,6 +46,7 @@ const VideoEditorTimeline: React.FC<VideoEditorTimelineProps> = ({ args, theme }
   const dragOffsetRef = useRef(0);
   const initialMouseXRef = useRef<number>(0);
   const initialCropTimeRef = useRef<number>(0);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // Inform Streamlit that the component is ready
@@ -88,6 +89,21 @@ const VideoEditorTimeline: React.FC<VideoEditorTimelineProps> = ({ args, theme }
     }
   }, []);
 
+  // Auto-resize observer: only if user did not pass height
+  useEffect(() => {
+    if (args.height) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => {
+      const newHeight = el.getBoundingClientRect().height;
+      Streamlit.setFrameHeight(newHeight);
+    });
+    observer.observe(el);
+    // Initial height
+    Streamlit.setFrameHeight(el.getBoundingClientRect().height);
+    return () => observer.disconnect();
+  }, [args.height]);
+
   const formatTime = (seconds: number): string => {
     const min = Math.floor(seconds / 60);
     const sec = Math.floor(seconds % 60);
@@ -102,7 +118,6 @@ const VideoEditorTimeline: React.FC<VideoEditorTimelineProps> = ({ args, theme }
       end: cropEndTime,
       shouldRefreshTaskList: true
     });
-    setCropMode(false);
   };
 
   const handleToggleCrop = () => {
@@ -205,12 +220,16 @@ const VideoEditorTimeline: React.FC<VideoEditorTimelineProps> = ({ args, theme }
   };
 
   return (
-    <div style={{
-      fontFamily: effectiveTheme.font,
-      color: effectiveTheme.textColor,
-      backgroundColor: effectiveTheme.backgroundColor,
-      padding: '10px',
-    }}>
+    <div
+      ref={containerRef}
+      style={{
+        fontFamily: effectiveTheme.font,
+        color: effectiveTheme.textColor,
+        backgroundColor: effectiveTheme.backgroundColor,
+        padding: '10px',
+        height: args.height ? args.height : 'auto',
+      }}
+    >
       <div className="container">
         <video
           ref={videoRef}

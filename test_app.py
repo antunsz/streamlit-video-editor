@@ -35,7 +35,7 @@ if video_file is not None:
         video_data=video_bytes,
         waveform_data=waveform_data,
         frame_data=frame_data,
-        height=1200,
+        # height=1200,
         key="timeline-demo"
     )
     st.subheader("Crop Result")

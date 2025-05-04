@@ -44,9 +44,9 @@ def video_editor_timeline(
     video_path: Optional[str] = None,
     waveform_data: Optional[List[float]] = None,
     frame_data: List[Union[str, Dict[str, str]]] = [],
-    height: int = 1000,
+    height: Optional[int] = None,
     key: Optional[str] = None
-):
+) -> Optional[Dict[str, float]]:
     """Displays a video along with an editor–style timeline that shows:
       • Left–side labels for VIDEO and AUDIO.
       • Two timeline tracks (blue for video, red for audio).
@@ -200,13 +200,16 @@ def video_editor_timeline(
     
     # Pass video URL, waveform data, and frame data to the component
     try:
-        component_value = _component_func(
+        # Build arguments for component call
+        comp_args: Dict[str, Any] = dict(
             video_url=final_video_url,
-            height=height,
             waveform_data=waveform_data,
             frame_data=safe_frame_data,
-            key=key
+            key=key,
         )
+        if height is not None:
+            comp_args['height'] = height
+        component_value = _component_func(**comp_args)
         logger.info(f"Component returned value: {component_value}")
         return component_value
     except Exception as e:

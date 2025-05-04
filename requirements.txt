@@ -2,4 +2,3 @@ streamlit
 moviepy
 numpy
 Pillow
-ffmpeg
