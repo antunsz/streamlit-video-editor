@@ -118,6 +118,13 @@ const VideoEditorTimeline: React.FC<VideoEditorTimelineProps> = ({ args, theme }
       end: cropEndTime,
       shouldRefreshTaskList: true
     });
+
+    // Move start to previous end, and set end a few seconds later
+    const defaultInterval = 5; // seconds ahead
+    const newStart = cropEndTime;
+    const newEnd = Math.min(videoDuration, newStart + defaultInterval);
+    setCropStartTime(newStart);
+    setCropEndTime(newEnd);
   };
 
   const handleToggleCrop = () => {
@@ -174,10 +181,16 @@ const VideoEditorTimeline: React.FC<VideoEditorTimelineProps> = ({ args, theme }
     if (activeMarkerRef.current === 'start') {
       if (newTime < cropEndTime) {
         setCropStartTime(newTime);
+        if (videoRef.current) {
+          videoRef.current.currentTime = newTime;
+        }
       }
     } else {
       if (newTime > cropStartTime) {
         setCropEndTime(newTime);
+        if (videoRef.current) {
+          videoRef.current.currentTime = newTime;
+        }
       }
     }
   };
